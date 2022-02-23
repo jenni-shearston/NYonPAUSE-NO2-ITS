@@ -37,11 +37,13 @@ library(httr)
 library(data.table)
 
 # 0b Register email and get key
-#GET("https://aqs.epa.gov/data/api/signup?email=js5431@cumc.columbia.edu")
+#    Note: enter email after 'email=' in GET command below
+#GET("https://aqs.epa.gov/data/api/signup?email=")
 
 # 0c Set email and key vars
+#    Note: pull key 
 email = c("js5431@cumc.columbia.edu")
-key = c("goldgoose24")
+key = c("")
 
 ####***************************
 #### 1: Enter Monitor Info #### 

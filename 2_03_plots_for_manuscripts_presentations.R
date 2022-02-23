@@ -48,7 +48,8 @@ mod_weekend <- readRDS("outputs/mod_weekend.rds")
 mod_RIS <- readRDS("outputs/mod_mainRIS.rds")
 
 # 0d Load census API key
-census_api_key("647afc44761c0d33913be07ed76de61a6e79b60d")
+#    Note: copy and paste API key stored in .gitignore
+census_api_key("")
 
 
 ####*****************************************
@@ -82,7 +83,8 @@ monitors_transformed_w_lat_lon <- cbind(monitors_transformed, st_coordinates(mon
 ggplot() + geom_sf(data = monitors_transformed_w_lat_lon)
 
 # 1e Get google map basemap
-register_google(key = "AIzaSyBg3_lMBGVH66g61WDvBcLCIChHr4C6oKU")
+#    Note: Copy and paste API key from .gitignore
+register_google(key = "")
 basemap <- get_googlemap(center = c(lon = -73.937143, lat = 40.763750), zoom = 10,
                          maptype = "roadmap")
 ggmap(basemap) + theme_void()
