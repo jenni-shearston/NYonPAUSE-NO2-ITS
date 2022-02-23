@@ -50,6 +50,7 @@ mod_main <- readRDS("outputs/mod_main.rds")
 mod_hourly <- readRDS("outputs/mod_hourly.rds")
 mod_weekend <- readRDS("outputs/mod_weekend.rds")
 mod_RIS <- readRDS("outputs/mod_mainRIS.rds")
+mod_roadside <- readRDS("outputs/mod_roadside.rds")
 
 # 0d Load census API key
 #    Note: enter your own key; JS key in API_Keys.R
@@ -268,7 +269,7 @@ se_mod_main_int  <- summary(mod_main)$tTable[2,2]
 lci_mod_main_int  <- beta_mod_main_int - 1.96*se_mod_main_int
 uci_mod_main_int  <- beta_mod_main_int + 1.96*se_mod_main_int
 
-# 4b Pull intervention effects for roadside interaction (Table 2)
+# 4b Pull intervention effects for roadside models (Table 2)
 beta_mod_nonroadside_int <- summary(mod_roadside$mods[[1]])$tTable[2,1]
 se_mod_nonroadside_int <- summary(mod_roadside$mods[[1]])$tTable[2,2]
 lci_mod_nonroadside_int <- beta_mod_nonroadside_int - 1.96*se_mod_nonroadside_int
