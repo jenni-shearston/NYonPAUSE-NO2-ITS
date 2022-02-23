@@ -1,7 +1,7 @@
 # Models - ITS Analyses for Manuscript
 # F31 NO2 COVID ITS Analysis
 # Jenni A. Shearston 
-# Updated 01/19/2022
+# Updated 02/23/2022
 
 ####***********************
 #### Table of Contents #### 
@@ -14,7 +14,7 @@
 # 2: Run Main Model and evaluate
 # 3: Hourly stratification
 # 4: Weekday/weekend stratification
-# 5: Roadside monitors interaction
+# 5: Roadside monitors stratification
 
 
 ####**************
@@ -22,7 +22,10 @@
 ####**************
 
 # Na Description
-# xxxx
+# In this script we run the models for the manuscript. After determining the 
+# choice of main model, we run model diagnostics. We then do stratified 
+# analyses for hour of day, weekday / weekend, and roadside / non-roadside monitors
+
 
 ####********************
 #### 0: Preparation #### 
@@ -35,7 +38,7 @@ library(forecast);
 # 0b Load data
 no2_full <- read_csv("./data/no2_with_covariates.csv")
 
-# 0c Filter dataset, create ITS variables, scale as needed
+# 0c Filter dataset, create ITS variables, create scaled variables in case they are needed
 #    Notes: Do not include Rutgers and Chester, as these are too far away from
 #           NYC to really be considered the metro area, and only include dates
 #           through the end of NY on PAUSE for NYC (June 8, 2020)
@@ -61,7 +64,6 @@ no2_formods <- no2_full %>% dplyr::select(datetime_full, uniq_mon_dt, monitor_id
          year = factor(lubridate::year(datetime_local)),
          sample_measurement_scale = scale(sample_measurement, center = T, scale = T),
          wind_speed_scale = scale(wind_speed, center = T, scale = T),
-         #ceiling_height_scale = scale(ceiling_height, center = T, scale = T),
          temp_scale = scale(temp, center = T, scale = T),
          spf_humidity_scale = scale(spf_humidity, center = T, scale = T),
          surf_pressure_scale = scale(surf_pressure, center = T, scale = T),
@@ -122,14 +124,17 @@ pacf(no2_formods$sample_measurement, na.action = na.pass, lag = 100)
 # Notes: -Here we run a fixed effects model, a mixed effects model with only random
 #         intercepts, and a mixed effects model with both random intercepts and slopes.
 #        -We used AIC to determine which model had better fit.
-#        -We concluded that XXX was the way to go, because ... 
+#        -We concluded that random intercepts was the way to go, because random slopes
+#         only decreased the AIC very slightly but did add additional features to the model
+#         Additionally random slopes were very small and close to the fixed effect
 #        -I used these guides as a reference when creating and testing the models:
 #         https://slcladal.github.io/regression.html#Random_Effects
 #         https://dfzljdn9uc3pi.cloudfront.net/2020/9522/1/MixedModelDiagnostics.html
 #        -There was an error when running the random effect and slope model in the lme4 
 #         package without scaling, so I coded models with centered & scaled numeric vars
 #         and models without. In nlme I could run all three models without the 
-#         centering and scaling, so we use those models because of their interpretability
+#         centering and scaling, so we use the nlme package with no scaled variables  
+#         because of their interpretability
 #        -Also in the lme4 package, the random intercept and slope model would not 
 #         converge when time_of_day had 24 levels. Ended up using the nlme package.
 #        -Because of high missingness, I do not include PM2.5 in the main model
@@ -192,8 +197,7 @@ saveRDS(mod_mainRIS, "outputs/mod_mainRIS.rds")
 
 # 1e Compare fixed vs mixed effects models
 #    Notes: While adding random intercepts substantially reduces the AIC value,
-#           adding random slopes improves the AIC by a smaller value
-#           Will choose to use XXXX
+#           adding random slopes improves the AIC by a much smaller value
 # 1e.i Centered and scaled models
 AIC(logLik(mod_mainFE_s))                                   # AIC = 278182.9
 AIC(logLik(mod_mainRI_s))                                   # AIC = 269243.7 
@@ -205,11 +209,10 @@ AIC(logLik(mod_mainRI))                                   # AIC = 842060.3
 AIC(logLik(mod_mainRIS))                                  # AIC = 842052.4
 anova(mod_mainRI, mod_mainRIS)
 
+
 ####***************************************
 #### 2: Run and Evaluate Main Model #### 
 ####***************************************
-
-# Notes: 
 
 # 2a Run main model
 mod_main = lme(sample_measurement ~ intervention + time_elapsed
@@ -227,11 +230,11 @@ no2_fordiag <- no2_formods_cc %>%
 # 2c Check heteroscedasticity using resids vs fitted values plot
 #    Notes: A bit of a funneling shape and strange linear line
 #           in the bottom left quadrant
-#           I did some exploring below, but still no idea why linear shape
+#           I did some exploring below, but still not sure why linear shape
 #           is present for low NO2 concentrations
 #           Since this is for quite low NO2 concentrations, and is
 #           slightly different by monitor, could it be detection limits?
-#           Also tried removing obs with resids above 5 (code not included),
+#           Also tried removing obs with resids >3SD+mean (code not included),
 #           but this did not help
 # 2c.i All monitors
 no2_fordiag %>% ggplot(aes(x = fitted, y = resids_scaled)) +
@@ -264,13 +267,12 @@ table(no2_full$monitor_id, no2_full$detection_limit)
 # 2d Check for non-linearity using resids vs explanatory vars plots
 #    Notes: time_elapsed, temp, spf_humidity, surf_pressure, radiation looked good
 #           wind_speed and precip are very funnelled
-#           ASK MAK: add splines? do we care?
+#           Tried adding nonlinear terms to model, but it did not improve plots
 # 2d.i time_elapsed & other vars
 no2_fordiag %>% ggplot(aes(x = wind_speed, y = resids_scaled, color = monitor_id)) +
   geom_point(alpha = 0.25) + geom_hline(yintercept = 0) + xlab("Explanatory Var") + 
   ylab("Standardized residuals") + theme_bw()
-# 2d.ii Run non-linear version to see if resids vs explanatory vars plots
-#       improve
+# 2d.ii Run non-linear version to see if resids vs explanatory vars plots improve
 #       Note: the resids vs explanatory plots dont really improve
 library(splines)
 mod_main_ns = lme(sample_measurement ~ intervention + time_elapsed
@@ -298,11 +300,10 @@ qqline(no2_fordiag$resids)
 
 # 2g Check for influential datapoints
 #    Notes: monitor 34-003-0010 (Fort Lee) has a large number of residual 
-#           outliers and monitor 34-017-1002 also has some outliers, but
-#           I have not figured out how to calculate leverage or Cooks D
-#           to determine if they are influential. MAK and I have 
-#           reviewed outliers, and they all occur before the intervention;
-#           we think they are probably okay
+#           outliers and monitor 34-017-1002 also has some outliers. MAK and JAS  
+#           reviewed outliers, and they all occur before the intervention
+#           and do not seem to have a pattern; we think they are probably okay
+#           will run a sensitivity test to check
 # 2g.i Look at boxplots of residuals by monitor_id
 plot(mod_main, monitor_id ~ resid(., scaled=TRUE), abline=0, pch=16,
      xlab = "Standardised residuals", ylab = "Monitor ID")
@@ -310,26 +311,20 @@ plot(mod_main, monitor_id ~ resid(., scaled=TRUE), abline=0, pch=16,
 mean_no2 <- mean(no2_formods_cc$sample_measurement)
 sd_no2 <- sd(no2_formods_cc$sample_measurement)
 no2_fordiag %>% filter(resids > (mean_no2+(sd_no2*3))) %>% View()
-# 2g.iii tried and failed packages to calculate leverage and cooks d
-# predictmeans::CookD(mod_main)
-# infl <- HLMdiag::hlm_influence(mod_main, level = 1)
-# car::influence.lme(mod_main)
-# car::cooks.distance(influence(mod_main))
-# car::infIndexPlot(influence(mod_main, obs = TRUE))
 
 # 2h Check that the random effect distribution is normal
 #    Notes: Looks fairly good
 hist(ranef(mod_main)[,1])
 
 # 2i Check for autocorrelation
-#    Notes: still quite a bit of autocorrelation, through ~ lag 30; 
+#    Notes: still some autocorrelation, through ~ lag 30; 
 #           partial acf suggests the autocorrelation at lower lags
 #           is mostly explained by the autocorrelation at higher lags
 # 2i.i Run ACF/PACF plots
 acf(no2_fordiag$resids)
 pacf(no2_fordiag$resids)
 # 2i.ii Try adding correlation structure to model
-#       Note; get an error stating it is too large 
+#       Note: get an error stating it is too large
 #             "Error: 'sumLenSq := sum(table(groups)^2)' = 2.49449e+09 is too large."
 mod_main_arma <- update(mod_main, correlation = corAR1(form = ~ 1|monitor_id))
 
@@ -397,6 +392,7 @@ mod_weekend = no2_formods_cc %>% dplyr::select(-time_elapsed) %>%
 
 # 4c Save models
 saveRDS(mod_weekend, "outputs/mod_weekend.rds")
+
 
 ####*****************************************
 #### 5: Road-side Monitor Stratification #### 

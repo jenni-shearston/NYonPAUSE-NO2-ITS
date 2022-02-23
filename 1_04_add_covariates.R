@@ -165,77 +165,13 @@ corrplot::corrplot(corr, type = "upper", tl.col = "black", tl.srt = 45)
 ####**************************************
 
 # Notes: Analyses were first run using ISD data, but because there was substantial
-#        missing weather data, we later switched to NLDAS data from NASA. Thus, ISD
-#        data has been hashtagged out in the code below.
+#        missing weather data, we later switched to NLDAS data from NASA. Only
+#        NLDAS data has been included in the script below (older ISD script can
+#        be found in Extra_Code_Snippets (not available publicly on github)).
 #        Here are links to the NLDAS weather documentation and EPA AQS documentation
 #        specifying time zones for each dataset (GMT!):
 #        https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/README.NLDAS2.pdf
 #        https://aqs.epa.gov/aqsweb/documents/data_mart_welcome.html
-
-# 2a Pull weather data from LGA station
-#lga_18 <- isd(usaf="725030", wban="14732", year=2018, force=TRUE) # 2 mins to download
-#lga_19 <- isd(usaf="725030", wban="14732", year=2019, force=TRUE) # 2 mins to download
-#lga_20 <- isd(usaf="725030", wban="14732", year=2020, force=TRUE) # 2 mins to download
-
-# 2b Bind 2018-2020 data together
-#lga <- lga_18 %>% 
-#  bind_rows(lga_19, lga_20) 
-
-# 2c Save out file for later use (to avoid downloading every time)
-#write_csv(lga, "./data/lga_weather18-20.csv")
-
-# 2d Load weather data
-#weather <- read_csv("./data/lga_weather18-20.csv")
-
-# 2e Clean weather data
-# weather <- weather %>% 
-#   mutate(datetime = paste0(date, time),
-#          datetime = lubridate::ymd_hm(datetime)) %>% 
-#   dplyr::select(datetime, date, time, 
-#                 wind_direction, wind_speed,
-#                 ceiling_height, temperature, 
-#                 temperature_dewpoint, AA1_depth,
-#                 air_pressure) %>%
-#   mutate(wind_direction = as.numeric(wind_direction),
-#          wind_speed = as.numeric(wind_speed),
-#          ceiling_height = as.numeric(ceiling_height),
-#          temperature = as.numeric(temperature),
-#          temperature_dewpoint = as.numeric(temperature_dewpoint),
-#          AA1_depth = as.numeric(AA1_depth),
-#          air_pressure = as.numeric(air_pressure),
-#          date = as.character(date(datetime))) %>% 
-#   replace_with_na(replace = list(wind_direction = 999,          #degrees
-#                                  wind_speed = 9999,             #m/s?
-#                                  ceiling_height = 99999,        #m, 22000=unlimited
-#                                  temperature = 9999,            #celsius, scaled by 10
-#                                  temperature_dewpoint = 9999,   #celsius, scaled by 10
-#                                  air_pressure = 99999)) %>%     #hectopascals, scaled by 10
-#   mutate(temperature = temperature/10,
-#          temperature_dewpoint = temperature_dewpoint/10) %>% 
-#   mutate(rel_hum = dewpoint.to.humidity(dp = temperature_dewpoint, t = temperature, 
-#                                         temperature.metric = "celsius")) # in percent
-# 
-# # 2f Average such that there is one value per hour
-# # Note: There are often several observations during a single hour (e.g., 01/01/2018 at 0000 and 0051)
-# # Should end up with n = (365*24*2)+(366*24) = 26304 observations
-# weather <- weather %>% 
-#   mutate(hour = hour(datetime)) %>% 
-#   dplyr::select(datetime, date, time, hour, everything()) %>% 
-#   group_by(date, hour) %>% 
-#   summarise(wind_direction = mean(wind_direction, na.rm = T),
-#             wind_speed = mean(wind_speed, na.rm = T),
-#             ceiling_height = mean(ceiling_height, na.rm = T),
-#             temperature = mean(temperature, na.rm = T),
-#             temperature_dewpoint = mean(temperature_dewpoint, na.rm = T),
-#             air_pressure = mean(air_pressure, na.rm = T),
-#             AA1_depth = mean(AA1_depth, na.rm = T),
-#             rel_hum = mean(rel_hum, na.rm = T)) %>% 
-#   mutate(datetime = paste0(date, hour),
-#          datetime = lubridate::ymd_h(datetime))
-# 
-# # 2g Join with hourly no2 data
-# no2_full <- no2_full %>% 
-#   left_join(weather, by = c("datetime_full" = "datetime"))
 
 # 2a Load NLDAS weather data
 nldas_2018 <- fst::read_fst('data/nldas_data/2018_NLDAS_NYC.fst')
@@ -293,13 +229,15 @@ nldas <- nldas %>%
 no2_full <- no2_full %>% 
   left_join(nldas, by = c("datetime_full" = "datetime_gmt"))
 
+
 ####************************************
 #### 3: Load and Prepare PM2.5 Data #### 
 ####************************************
 
 # 3a Set email and key vars
-email = c("js5431@cumc.columbia.edu")
-key = c("goldgoose24")
+#    Note: enter your own email and key; JS key in API_Keys.R
+email = c("")
+key = c("")
 
 # 3b Create tibble of monitor data
 # Data entered from EPA's Interactive Map of Air Quality Monitors
@@ -424,7 +362,7 @@ no2_full %>% summarise(count = sum(is.na(pm2.5)))
 ####*************************
 
 # 5a Save NO2 dataset with covariates
-fwrite(no2_full, "./Data/no2_with_covariates.csv")
+fwrite(no2_full, "./data/no2_with_covariates.csv")
 
 
 

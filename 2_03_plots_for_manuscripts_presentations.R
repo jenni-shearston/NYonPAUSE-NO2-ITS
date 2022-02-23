@@ -1,7 +1,7 @@
 # Plots for Manuscripts & Presentations
 # F31 NO2 COVID ITS Analysis
 # Jenni A. Shearston 
-# Updated 12/15/2021
+# Updated 02/23/2022
 
 ####***********************
 #### Table of Contents #### 
@@ -12,14 +12,18 @@
 # 1: Monitor Location Map (Fig 1)
 # 2: NO2 Time Series Plot (Fig 2)
 # 3: ITS Plot (Fig 3)
-# 4: ITS Results Table (Table 1)
-# 5: Pre vs During Intervention Weather (Supplemental Table and Figure)
+# 4: ITS Results (Table 2 and Figure 4)
+# 5: Pre vs During Intervention Weather (Table 1 and Supp Figure 1)
+# 6: Random Intercepts and Slopes Plot (Sup. Fig 2)
 
 
 ####**************
 #### N: Notes #### 
 ####**************
 
+# Na Description
+# In this script we make all plots and figures for the manuscript
+# We also curate data (model results) to make it easier to fill in tables
 
 
 ####********************
@@ -48,7 +52,7 @@ mod_weekend <- readRDS("outputs/mod_weekend.rds")
 mod_RIS <- readRDS("outputs/mod_mainRIS.rds")
 
 # 0d Load census API key
-#    Note: copy and paste API key stored in .gitignore
+#    Note: enter your own key; JS key in API_Keys.R
 census_api_key("")
 
 
@@ -83,7 +87,7 @@ monitors_transformed_w_lat_lon <- cbind(monitors_transformed, st_coordinates(mon
 ggplot() + geom_sf(data = monitors_transformed_w_lat_lon)
 
 # 1e Get google map basemap
-#    Note: Copy and paste API key from .gitignore
+#    Note: enter your own key; JS key in API_Keys.R
 register_google(key = "")
 basemap <- get_googlemap(center = c(lon = -73.937143, lat = 40.763750), zoom = 10,
                          maptype = "roadmap")
@@ -134,67 +138,6 @@ tiff("./figures/monitor_map.tiff",
      units = "in", width = 8, height = 7, res = 300)
 monitor_map
 dev.off()
-
-##****************Old Version
-
-# # 1b Load census geometry and commuting data
-# # 1b.i Load variable table to id commuting var
-# #v19 <- load_variables(2019, "acs5", cache = TRUE)
-# # 1b.ii Load NY data
-# options(tigris_use_cache = TRUE)
-# nydata <- get_acs(state = c("NY"), 
-#                    county = c("Bronx", "Kings", "New York", "Queens", "Richmond"),
-#                    geography = "tract", 
-#                    variables = c(vehicle_to_work = "B08006_002", 
-#                                  population = "B01003_001"), 
-#                    geometry = TRUE) %>% dplyr::select(-moe) 
-# # 1b.iii Create proportion commuting to work in a vehicle variable
-# pop <- as.data.frame(nydata) %>% filter(variable == "population") 
-# nydata <- nydata %>% filter(variable == "vehicle_to_work") %>% 
-#   mutate(prop_veh_to_work = round((estimate/pop$estimate)*100, digits = 1))
-# 
-# # 1c Make NYC shoreline clear
-# # 1c.i Make function to remove water from census tracts
-# st_erase <- function(x, y) {
-#   st_difference(x, st_union(y))
-# }
-# # 1c.ii Pull NY water area
-# ny_water <- area_water("NY", 
-#                        c("Bronx", "Kings", "New York", "Queens", "Richmond"), 
-#                        class = "sf") 
-# # 1c.iii Create shorelines
-# nyc_shorelines <- st_erase(nydata, ny_water)
-# 
-# # 1d Make map
-# # 1d.i Map basemap
-# basemap <- get_acs(state = c("NY", "NJ"), geography = "state",
-#                     variable = "B01003_001", geometry = TRUE)
-# ggplot() + geom_sf(data = basemap)
-# # # 1d.ii Crop basemap
-# basemap_crop <-
-#   st_crop(basemap, xmin = -74.3, xmax = -73.68,
-#               ymin = 40.48, ymax = 40.94)
-# ggplot() + geom_sf(data = basemap_crop)
-# # 1d.ii Add chloropleth map and monitor locations
-# monitor_map <- ggplot() +
-#   geom_sf(data = basemap_crop) + 
-#   geom_sf(data = nyc_shorelines, color = NA, aes(fill = prop_veh_to_work), 
-#           inherit.aes = FALSE) + 
-#   geom_point(data = monitors, aes(x = long, y = lat), size = 3, 
-#              shape = 21, fill = "white", inherit.aes = FALSE) +
-#   #annotate(geom = "text", x = -73.76, y = 41.06,
-#   #         label = "New York", hjust = 1, size = 14 / .pt) +
-#   annotate(geom = "text", x = -74.05, y = 40.8, 
-#            label = "New Jersey", hjust = 1, size = 14 / .pt) +
-#   scale_fill_scico(palette = "hawaii") +
-#   theme_void() + labs(fill="% Commute to work \n in Vehicle") +
-#   theme(legend.position = "bottom", text = element_text(size = 14))
-# 
-# # 1d Save map
-# tiff("./figures/monitor_map.tiff", 
-#      units = "in", width = 8, height = 7, res = 300)
-# monitor_map
-# dev.off()
 
 
 ####*********************************
@@ -308,14 +251,16 @@ its_results_plot
 dev.off()
 
 
-####************************************
-#### 4: ITS Results Table (Table 2) #### 
-####************************************
+####*****************************************
+#### 4: ITS Results (Table 2 & Figure 4) #### 
+####*****************************************
 
 # Here we load and prepare data to make it easy to make or copy/paste
 # data into a MS Word table
+# Figure 4 was made in MS PowerPoint, so here we curate model results
+# to make them easier to transfer to PowerPoint
 
-# 4a Pull intervention effects for main model
+# 4a Pull intervention effects for main model (Table 2)
 summary(mod_main)  
 ranef(mod_main)    # random intercepts
 beta_mod_main_int <- summary(mod_main)$tTable[2,1]
@@ -323,7 +268,7 @@ se_mod_main_int  <- summary(mod_main)$tTable[2,2]
 lci_mod_main_int  <- beta_mod_main_int - 1.96*se_mod_main_int
 uci_mod_main_int  <- beta_mod_main_int + 1.96*se_mod_main_int
 
-# 4b Pull intervention effects for roadside interaction
+# 4b Pull intervention effects for roadside interaction (Table 2)
 beta_mod_nonroadside_int <- summary(mod_roadside$mods[[1]])$tTable[2,1]
 se_mod_nonroadside_int <- summary(mod_roadside$mods[[1]])$tTable[2,2]
 lci_mod_nonroadside_int <- beta_mod_nonroadside_int - 1.96*se_mod_nonroadside_int
@@ -334,7 +279,7 @@ se_mod_roadside_int <- summary(mod_roadside$mods[[2]])$tTable[2,2]
 lci_mod_roadside_int <- beta_mod_roadside_int - 1.96*se_mod_roadside_int
 uci_mod_roadside_int <- beta_mod_roadside_int + 1.96*se_mod_roadside_int
   
-# 4c Pull intervention effects for weekend/weekday models
+# 4c Pull intervention effects for weekend/weekday models (Table 2)
 beta_mod_weekday_int <- summary(mod_weekend$mods[[1]])$tTable[2,1]
 se_mod_weekday_int  <- summary(mod_weekend$mods[[1]])$tTable[2,2]
 lci_mod_weekday_int  <- beta_mod_weekday_int - 1.96*se_mod_weekday_int
@@ -345,7 +290,7 @@ se_mod_weekend_int  <- summary(mod_weekend$mods[[2]])$tTable[2,2]
 lci_mod_weekend_int  <- beta_mod_weekend_int - 1.96*se_mod_weekend_int
 uci_mod_weekend_int  <- beta_mod_weekend_int + 1.96*se_mod_weekend_int
 
-# 4d Pull intervention effects for hourly models
+# 4d Pull intervention effects for hourly models (Figure 4)
 # 4d.i Create empty tibble to hold effect estimates
 results_hourly <- tibble(hour = NA, beta = NA, se = NA)
 # 4d.ii Run for loop to pull data from each hour
@@ -355,15 +300,15 @@ for(i in 1:length(mod_hourly$time_of_day)){
             beta = summary(mod_hourly$mods[[i]])$tTable[2,1],
             se = summary(mod_hourly$mods[[i]])$tTable[2,2])
 }
-# 4d.iii Calculate 95% CIs
+# 4d.iii Calculate 95% CIs (Figure 4)
 results_hourly <- results_hourly %>% 
   mutate(lci = beta - 1.96*se, uci = beta + 1.96*se) %>% 
   mutate_at(c("beta", "se", "lci","uci"), ~round(., digits = 1))
 
 
-####************************************************
-#### 5: Pre vs During Intervention Descriptives #### 
-####************************************************
+####*************************************************************************
+#### 5: Pre vs During Intervention Descriptives (Table 1 and Supp Fig 1) #### 
+####*************************************************************************
 
 # 5a Pre-during supplemental table (Table 1)
 pre_during <- no2_plot %>%
@@ -422,65 +367,29 @@ windrose
 dev.off()
 
 
-####***************************************
-#### 6: Forest Plot for hourly effects #### 
-####***************************************
-
-# 6a Alter times for plotting
-results_hourly_forplot <- results_hourly %>% filter(!is.na(hour)) %>% 
-  mutate(am_pm = c("am", "am", "am", "am", "am", "am", "am", "am", "am",
-                   "am", "am", "am", "pm", "pm", "pm", "pm", "pm", "pm", 
-                   "pm", "pm", "pm", "pm", "pm", "pm"),
-         hour2 = paste0(hour, ":00"),
-         hour2 = factor(hour2, levels = c("23:00", "22:00", "21:00", "20:00",
-                                          "19:00", "18:00", "17:00", "16:00",
-                                          "15:00", "14:00", "13:00", "12:00",
-                                          "11:00", "10:00", "9:00", "8:00",
-                                          "7:00", "6:00", "5:00", "4:00",
-                                          "3:00", "2:00", "1:00", "0:00")))
-
-# 6b Create forest plot
-hourly_forest_plot <- results_hourly_forplot %>% 
-  ggplot(aes(y = hour2, x = beta, color = am_pm)) + 
-  geom_point() +
-  geom_errorbarh(aes(xmin = uci, xmax = lci)) +
-  geom_vline(xintercept = 0, linetype = "longdash") +
-  xlab("Effect Estimate with 95% CI") + ylab("Hour of Day") +
-  labs(color = "") +
-  scale_color_manual(values = c("darkgoldenrod1", "deepskyblue2")) +
-  theme_bw(base_size = 16) +
-  theme(legend.position = "bottom", legend.direction = "horizontal")
- 
-# 6c Save plot
-tiff("./figures/hourly_forest_plot.tiff", 
-     units = "in", width = 12, height = 8, res = 300)
-hourly_forest_plot
-dev.off()
-
-
 ####*******************************************************
-#### 7: Random Intercepts and Slopes Plot (Sup. Fig 1) #### 
+#### 6: Random Intercepts and Slopes Plot (Sup. Fig 2) #### 
 ####*******************************************************
 
-# 7a  Create empty tibble to hold effect estimates
+# 6a Create empty tibble to hold effect estimates
 results_RIvsRIS <- tibble(model = NA, beta_type = NA,
                           beta = NA, se = NA)
 
-# 7b Add RI results
+# 6b Add RI results
 results_RIvsRIS <- results_RIvsRIS %>% 
   add_row(model = "Random Intercepts",
           beta_type = "Fixed Effect",
           beta = summary(mod_main)$tTable[2,1],
             se = summary(mod_main)$tTable[2,2])
 
-# 7c Add RIS results
+# 6c Add RIS results
 results_RIvsRIS <- results_RIvsRIS %>% 
   add_row(model = "Random Intercepts & Slopes",
           beta_type = "Fixed Effect",
           beta = summary(mod_mainRIS)$tTable[2,1],
           se = summary(mod_mainRIS)$tTable[2,2])
 
-# 7d Add random slopes from RIS
+# 6d Add random slopes from RIS
 #    Note: We add teh random slopes to the fixed effect for the intervention
 #          because they are centered around 0
 for(i in 1:length(ranef(mod_mainRIS)$interventionTRUE)){
@@ -491,12 +400,12 @@ for(i in 1:length(ranef(mod_mainRIS)$interventionTRUE)){
             se = NA)
 }
 
-# 7e Calculate 95% CIs
+# 6e Calculate 95% CIs
 results_RIvsRIS <- results_RIvsRIS %>% 
   mutate(lci = beta - 1.96*se, uci = beta + 1.96*se) %>% 
   filter(!is.na(beta))
 
-# 7f Create plot
+# 6f Create plot
 results_RIvsRIS_plot <- results_RIvsRIS %>% 
   ggplot(aes(x = model, y = beta)) + 
   geom_point(aes(shape = beta_type, color = beta_type), 
@@ -507,7 +416,7 @@ results_RIvsRIS_plot <- results_RIvsRIS %>%
   theme_bw(base_size = 16)
 results_RIvsRIS_plot
 
-# 7g Save plot
+# 6g Save plot
 tiff("./figures/RIvsRIS_plot.tiff", 
      units = "in", width = 10, height = 8, res = 300)
 results_RIvsRIS_plot

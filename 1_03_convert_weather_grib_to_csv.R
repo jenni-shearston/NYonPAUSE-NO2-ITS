@@ -12,6 +12,7 @@
 # 1: Readin All of the Grib Data 
 # 2: Split Long Data into Temperature and Humidity
 
+
 ####***************
 #### N: Notes  ####
 ####***************
@@ -74,12 +75,12 @@
 
 # 0.a Declare Directories 
 raw.data.folder <- '/Users/jennishearston/Desktop/nldas_data/'
-#intermediate.data.folder <- '~/Desktop/assign_temp_zip/Raw Data/NLDAS_raw'
-NLDAS.data.folder <- '~/Dropbox/Columbia/Research/F31_GoogleTraffic_COVID_CVD/NO2_ITS/data/nldas_data/'
+NLDAS.data.folder <- '~/Dropbox/Columbia/Research/F31_GoogleTraffic_COVID_CVD/NO2_ITS/NYonPAUSE-NO2-ITS/data/nldas_data/'
 
 # 0.b Load packages
 packages <- c("tidyverse", "rgdal")
 lapply(packages, library, character.only = TRUE)
+
 
 ####*************************************
 #### 1: Readin All of the Grib  Data #### 

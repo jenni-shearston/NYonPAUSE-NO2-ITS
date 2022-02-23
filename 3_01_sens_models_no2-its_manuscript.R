@@ -58,7 +58,6 @@ no2_formods <- no2_full %>% dplyr::select(datetime_full, uniq_mon_dt, monitor_id
     year = factor(lubridate::year(datetime_local)),
     sample_measurement_scale = scale(sample_measurement, center = T, scale = T),
     wind_speed_scale = scale(wind_speed, center = T, scale = T),
-    #ceiling_height_scale = scale(ceiling_height, center = T, scale = T),
     temp_scale = scale(temp, center = T, scale = T),
     spf_humidity_scale = scale(spf_humidity, center = T, scale = T),
     surf_pressure_scale = scale(surf_pressure, center = T, scale = T),
@@ -128,12 +127,12 @@ mod_main_wpm <- lme(sample_measurement ~ intervention + time_elapsed
 
 # 1e Compare effect estimates in models
 #    Note: Main results are different -- adjusting for PM2.5 decreased the
-#          effect estimate for NY on PAUSE by . However, this model also had
+#          effect estimate for NY on PAUSE by 2.12 ppb. However, this model also had
 #          a dramatically smaller sample size (33% missing)
 summary(mod_main)              # main effect = -3.23356; se = 0.121445
 summary(mod_main_wpm)          # main effect = -1.1138; se = 0.069096
 
-# 1f Let's also run the main model again (not adjusting for PM2.5), but using the
+# 1f Re-run main model (not adjusting for PM2.5), but using the
 #    same observations as included in 1d
 #    Note: We find a much smaller attenuation when comparing the same observations
 mod_main_wpm2 <- lme(sample_measurement ~ intervention + time_elapsed

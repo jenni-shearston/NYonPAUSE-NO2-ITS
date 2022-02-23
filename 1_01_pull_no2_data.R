@@ -17,6 +17,7 @@
 # 6: Clean data before saving
 # 7: Save out data
 
+
 ####**************
 #### N: Notes ####
 ####**************
@@ -25,6 +26,7 @@
 # We use this script to pull data from the EPA AQS API, AirData 
 # for 2018-2020
 # Instructions for API use: https://aqs.epa.gov/aqsweb/documents/data_api.html#email
+
 
 ####********************
 #### 0: Preparation #### 
@@ -41,9 +43,10 @@ library(data.table)
 #GET("https://aqs.epa.gov/data/api/signup?email=")
 
 # 0c Set email and key vars
-#    Note: pull key 
-email = c("js5431@cumc.columbia.edu")
+#    Note: enter your own email and key; JS key in API_Keys.R
+email = c("")
 key = c("")
+
 
 ####***************************
 #### 1: Enter Monitor Info #### 
@@ -89,6 +92,7 @@ monitors <- monitors %>%
 # 2b Replicate rows number of times in numb_years variable
 monitors <- monitors[rep(seq_len(nrow(monitors)), monitors$numb_years), 1:5]
 
+
 ####**************************************
 #### 3: Define Variables for API Pull #### 
 ####**************************************
@@ -124,6 +128,7 @@ monitors <- monitors %>%
 monitors <- monitors %>% 
   mutate(data = list(NA))
 
+
 ####*****************************************
 #### 4: Create Function to Pull from API #### 
 ####*****************************************
@@ -140,6 +145,7 @@ pull_NO2 = function(x) {
     as_tibble() %>% 
     unnest(cols = c(Header, Data))
 }
+
 
 ####**********************
 #### 5: Pull from API #### 
@@ -189,7 +195,7 @@ monitors2 <- monitors2 %>%
 # 7a Save out data as csv
 # note: large df, may take some time to save
 # do not use write.csv or write_csv - not fast enough
-fwrite(monitors2, "./Data/no2_nyc_area.csv")
+fwrite(monitors2, "./data/no2_nyc_area.csv")
 
 # 7b Clean environment
 rm(monitors, monitors2, email, key, x, pull_NO2)
