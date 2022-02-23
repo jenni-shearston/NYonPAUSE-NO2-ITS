@@ -10,7 +10,7 @@ Analytic Objectives: Assess (1) the overall impact of NY on PAUSE on TRAP concen
 
 The repository is organized as follows: 
 (1) Obtaining and curating data. This includes files 1_01, 1_02, 1_03, and 1_04
-(2) Modeling and results included in the manuscript and supplement. This includes files 2_01, 2_02, and 2_03
+(2) Modeling and results included in the manuscript and supplement. This includes files 2_02, 2_03, and 2_04
 (3) Sensitivity analyses. This includes file 3_01
 
 For questions, please contact Jenni Shearston, js5431@cumc.columbia.edu / jenni.shearston@gmail.com
