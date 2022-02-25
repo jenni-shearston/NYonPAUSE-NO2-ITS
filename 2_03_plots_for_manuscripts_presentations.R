@@ -52,10 +52,6 @@ mod_weekend <- readRDS("outputs/mod_weekend.rds")
 mod_RIS <- readRDS("outputs/mod_mainRIS.rds")
 mod_roadside <- readRDS("outputs/mod_roadside.rds")
 
-# 0d Load census API key
-#    Note: enter your own key; JS key in API_Keys.R
-census_api_key("")
-
 
 ####*****************************************
 #### 1: Map of Monitor Locations (Fig 1) #### 
