@@ -37,7 +37,7 @@ library(tidyverse); library(data.table); library(lubridate); library(splines)
 library(rnoaa); library(naniar); library(weathermetrics); library(rvest); library(httr)
 
 # 0b Load NO2 Data
-no2 <- fread("./Data/no2_nyc_area.csv")
+no2 <- fread("./data/no2_nyc_area.csv")
 
 # 0c Get a Feel for the Data
 glimpse(no2)
