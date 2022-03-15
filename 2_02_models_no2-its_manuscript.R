@@ -33,7 +33,7 @@
 
 # 0a Load Packages
 library(tidyverse); library(lubridate); library(nlme)
-library(forecast); 
+library(forecast); library(lme4)
 
 # 0b Load data
 no2_full <- read_csv("./data/no2_with_covariates.csv")
@@ -283,7 +283,7 @@ mod_main_ns = lme(sample_measurement ~ intervention + time_elapsed
 no2_fordiag_ns <- no2_formods_cc %>% 
   mutate(resids = residuals(mod_main_ns),
          resids_scaled = scale(resids))
-no2_fordiag_ns %>% ggplot(aes(x = precip, y = resids_scaled, color = monitor_id)) +
+no2_fordiag_ns %>% ggplot(aes(x = wind_speed, y = resids_scaled, color = monitor_id)) +
   geom_point(alpha = 0.25) + geom_hline(yintercept = 0) + xlab("Explanatory Var") + 
   ylab("Standardized residuals") + theme_bw()
 # 2e Check for heteroscedasticity by level of random effects
@@ -326,9 +326,42 @@ pacf(no2_fordiag$resids)
 # 2i.ii Try adding correlation structure to model
 #       Note: get an error stating it is too large
 #             "Error: 'sumLenSq := sum(table(groups)^2)' = 2.49449e+09 is too large."
+#             This means that there are too many observations within each group
 mod_main_arma <- update(mod_main, correlation = corAR1(form = ~ 1|monitor_id))
 
-# 2j Save model
+# 2j Try GLMM w Gamma and/or inverse.gaussian families
+#    Note: Both family forms require no negative values or zero values, 
+#          so we add very small values to all negative or zero values. 
+#          Keep getting the following error: Error in pwrssUpdate(pp, resp, 
+#          tol = tolPwrss, GQmat = GQmat, compDev = compDev,  : PIRLS loop 
+#          resulted in NaN value
+#          Adding a glm to determine the fixed effect and then using the
+#          'start' and 'control' parameters in the glmer was recommended on
+#          StackExchange as a potential solution for the error above, but has
+#          not worked
+no2_formods_cc_glmm <- no2_formods_cc %>% mutate(
+  sample_measurement = ifelse(sample_measurement < 1, 0.001, sample_measurement),
+  temp = ifelse(temp < 1, 0.001, temp),
+  precip = ifelse(precip < 1, 0.001, precip),
+  radiation = ifelse(radiation < 1, 0.001, radiation))
+glm <- glm(sample_measurement ~ intervention + time_elapsed 
+            + day_of_week + time_of_day + month + year 
+            + wind_dir_met_cat + wind_speed + temp  + precip 
+            + radiation + spf_humidity + surf_pressure, data = no2_formods_cc_glmm)
+mod_main_glmm <- lme4::glmer(sample_measurement ~ intervention + time_elapsed 
+                             + day_of_week + time_of_day + month + year 
+                             + wind_dir_met_cat + wind_speed + temp  + precip 
+                             + radiation + spf_humidity + surf_pressure 
+                             + (1|monitor_id), data = no2_formods_cc_glmm, 
+                             family = Gamma, start=list(fixef=coef(glm)), 
+                             control=glmerControl(nAGQ0initStep=FALSE))
+no2_fordiag_glmm <- no2_formods_cc_glmm %>% 
+  mutate(fitted = fitted(mod_main_glmm),
+         resids = residuals(mod_main_glmm),
+         resids_scaled = scale(resids))
+acf(no2_fordiag_glmm$resids)
+
+# 2k Save model
 saveRDS(mod_main, "outputs/mod_main.rds")
 
 
