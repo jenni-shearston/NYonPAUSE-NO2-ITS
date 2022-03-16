@@ -142,7 +142,7 @@ mod_main_wpm2 <- lme(sample_measurement ~ intervention + time_elapsed
                     random = ~1|monitor_id, data = no2_formods_cc_wpm, 
                     method = "ML")
 summary(mod_main_wpm2)        # main effect = -2.98457; se = 0.133073
-
+                              # lci = -2.99 - 0.13*1.96; uci = -2.99 + 0.13*1.96
 
 ####****************************************
 #### 2: Impute missing NO2 observations #### 

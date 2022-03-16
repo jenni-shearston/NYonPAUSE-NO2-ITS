@@ -340,10 +340,7 @@ mod_main_arma <- update(mod_main, correlation = corAR1(form = ~ 1|monitor_id))
 #          StackExchange as a potential solution for the error above, but has
 #          not worked
 no2_formods_cc_glmm <- no2_formods_cc %>% mutate(
-  sample_measurement = ifelse(sample_measurement < 1, 0.001, sample_measurement),
-  temp = ifelse(temp < 1, 0.001, temp),
-  precip = ifelse(precip < 1, 0.001, precip),
-  radiation = ifelse(radiation < 1, 0.001, radiation))
+  sample_measurement = ifelse(sample_measurement < 1, 0.1, sample_measurement))
 glm <- glm(sample_measurement ~ intervention + time_elapsed 
             + day_of_week + time_of_day + month + year 
             + wind_dir_met_cat + wind_speed + temp  + precip 
@@ -353,8 +350,8 @@ mod_main_glmm <- lme4::glmer(sample_measurement ~ intervention + time_elapsed
                              + wind_dir_met_cat + wind_speed + temp  + precip 
                              + radiation + spf_humidity + surf_pressure 
                              + (1|monitor_id), data = no2_formods_cc_glmm, 
-                             family = Gamma, start=list(fixef=coef(glm)), 
-                             control=glmerControl(nAGQ0initStep=FALSE))
+                             family = Gamma)#, start=list(fixef=coef(glm)), 
+                             #control=glmerControl(nAGQ0initStep=FALSE))
 no2_fordiag_glmm <- no2_formods_cc_glmm %>% 
   mutate(fitted = fitted(mod_main_glmm),
          resids = residuals(mod_main_glmm),
@@ -369,13 +366,18 @@ saveRDS(mod_main, "outputs/mod_main.rds")
 #### 3: Hourly Stratification #### 
 ####******************************
 
-# 3a Create function for model
-#    Notes: radiation is dropped due to rank deficiency 
-#           To determine which var was causing the full model not to run,
-#           used lme4::lmer (code below) because it gives a warning and allows the 
-#           model to run, so I could pick out the problematic variable, as per
-#           https://stackoverflow.com/questions/68028979/error-in-meemobject-conlin-controlniterem-singularity-in-backsolve-at-lev
+# 3a Create functions for model: one including radiation and one without
+#    Notes: radiation is not included for 8pm to 4am, because for these
+#           time periods radiation is always 0 (it is dark outside) which will
+#           cause an error in the model
 hourly_lme = function(df) {
+  lme(sample_measurement ~ intervention + time_elapsed + radiation
+      + day_of_week + month + year + wind_dir_met_cat
+      + wind_speed + temp + precip
+      + spf_humidity + surf_pressure,
+      random = ~1|monitor_id, data = df, method = "ML")
+}
+hourly_lme_norad = function(df) {
   lme(sample_measurement ~ intervention + time_elapsed
       + day_of_week + month + year + wind_dir_met_cat
       + wind_speed + temp + precip
@@ -389,14 +391,13 @@ mod_hourly = no2_formods_cc %>% dplyr::select(-time_elapsed) %>%
   mutate(time_elapsed = row_number()) %>% 
   ungroup() %>% group_by(time_of_day) %>% 
   nest() %>% 
-  mutate(mods = map(data, hourly_lme))
-
-# 3Extra: Run lme4::lmer model to determine which var was causing model to fail 
-# lme4::lmer(sample_measurement_scale ~ intervention + time_elapsed
-#            + day_of_week + month + year + wind_dir_met_cat
-#            + wind_speed_scale + temp_scale + precip_scale + radiation_scale
-#            + spf_humidity_scale + surf_pressure_scale +
-#            (1|monitor_id), data = mod_hourly$data[[1]])  
+  mutate(night_day = ifelse(time_of_day == '0' | time_of_day == '1'
+                            | time_of_day == '2' | time_of_day == '3'
+                            | time_of_day == '4' | time_of_day == '20'
+                            | time_of_day == '21' | time_of_day == '22'
+                            | time_of_day == '23', 'night', 'day')) %>% 
+  mutate(mods = ifelse(night_day == 'day', map(data, hourly_lme), 
+                       map(data, hourly_lme_norad)))
 
 # 3c Save models
 saveRDS(mod_hourly, "outputs/mod_hourly.rds")
