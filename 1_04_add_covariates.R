@@ -20,12 +20,13 @@
 #### N: Notes #### 
 ####**************
 
-# In this script, we browse and clean the NO2 data and review time series of different monitors,
-# including correlations between all monitors. We add weather and PM2.5 data to be used as
-# potential confounding variables in future analysis. We ensure the dataset is full, in other
-# words that it has an observation for all possible monitor/datetime combinations, even if the
-# NO2 data is missing for that monitor/datetime combination. We are aiming for a total n of 210432 -->
-# 8 monitors multiplied by 26304 hours (365*24*2+366*24)
+# In this script, we browse and clean the NO2 data and review time series of different
+# monitors, including correlations between all monitors. We add weather and PM2.5 
+# data to be used potential confounding variables in future analysis. We ensure the 
+# dataset is full, in other words that it has an observation for all possible 
+# monitor/datetime combinations, even if the NO2 data is missing for that monitor/datetime 
+# combination. We are aiming for a total n of 210432 --> 8 monitors multiplied by 
+# 26304 hours (365*24*2+366*24)
 
 
 ####********************
@@ -34,7 +35,8 @@
 
 # 0a Load Packages
 library(tidyverse); library(data.table); library(lubridate); library(splines) 
-library(rnoaa); library(naniar); library(weathermetrics); library(rvest); library(httr)
+library(rnoaa); library(naniar); library(weathermetrics); library(rvest); 
+library(httr)
 
 # 0b Load NO2 Data
 no2 <- fread("./data/no2_nyc_area.csv")
@@ -45,8 +47,6 @@ names(no2)
 summary(no2)
 
 # 0d Review Some Variables
-# If we can drop vars that are the same for all obs
-# this will decrease dataset size and increase speed
 table(no2$poc, useNA = c("always")) 
 table(no2$datum, useNA = c("always")) 
 table(no2$parameter, useNA = c("always")) 
@@ -58,7 +58,7 @@ table(no2$sample_duration_code, useNA = c("always"))
 table(no2$sample_frequency, useNA = c("always")) 
 table(no2$detection_limit, useNA = c("always")) # varied detection limits
 table(no2$uncertainty, useNA = c("always")) 
-table(no2$qualifier, useNA = c("always")) # super useful, with details like "high winds"
+table(no2$qualifier, useNA = c("always")) # super useful, w details like "high winds"
 table(no2$method_type, useNA = c("always")) 
 table(no2$method, useNA = c("always")) # different methods used
 table(no2$method_code, useNA = c("always")) 
@@ -69,13 +69,14 @@ table(no2$county_name, useNA = c("always"))
 table(no2$state_name, useNA = c("always")) 
 table(no2$state_code, useNA = c("always")) 
 table(no2$status, useNA = c("always")) 
-table(no2$request_time, useNA = c("always")) # leave as it might be useful is something is wrong w data
-table(no2$url, useNA = c("always")) # leave as it might be useful is something is wrong w data
+table(no2$request_time, useNA = c("always")) # could be useful for troubleshooting
+table(no2$url, useNA = c("always")) # could be useful for troubleshooting
 
 # 0e Drop vars that are not needed
-# Notes: poc, units_of_measure, units_of_measure_code, sample_duration, sample_frequency, parameter,
-# parameter_code, status, sample_duration_code are the same for all obs; 
-# uncertainty is NA for all obs
+#    Note: poc, units_of_measure, units_of_measure_code, sample_duration, 
+#          sample_frequency, parameter, parameter_code, status, 
+#          sample_duration_code are the same for all obs; 
+#          uncertainty is NA for all obs
 no2_clean <- no2 %>% 
   dplyr::select(-units_of_measure, -sample_duration, -sample_frequency, -parameter,
                 -parameter_code, -status, -uncertainty, -poc,
@@ -83,9 +84,9 @@ no2_clean <- no2 %>%
 rm(no2)
 
 # 0f Create datetime_local variable
-# Notes: _local is standard local time (not adjusted for daylight savings) while
-#        _gmt is also not adjusted for daylight savings
-#        keep both -- nldas weather data uses gmt 
+#    Note: _local is standard local time (not adjusted for daylight savings) while
+#          _gmt is also not adjusted for daylight savings
+#          keep both -- nldas weather data uses gmt 
 no2_clean <- no2_clean %>% 
   mutate(datetime_local1 = paste0(date_local, " ", time_local),
          datetime_gmt1 = paste0(date_gmt, " ", time_gmt)) %>% 
@@ -96,16 +97,21 @@ no2_clean <- no2_clean %>%
 # 0g Create unique id for all datetime-monitor combinations
 no2_clean <- no2_clean %>% 
   mutate(uniq_mon_dt = paste0(monitor_name, "_", datetime_gmt))
-no2_clean$uniq_mon_dt[duplicated(no2_clean$uniq_mon_dt)] # Check for duplicates --> should be 0
+no2_clean$uniq_mon_dt[duplicated(no2_clean$uniq_mon_dt)] # Check for duplicates
 
 # 0h Create unique datetime-monitor id for all *possible* combinations 
-#    (including those that are missing): n = 210432
+#    (including those that are missing): n = 210,432
+#    Note: This is 8,760 hrs (2018) + 8,760 hrs (2019) + 8,784 hrs (2020)
+#          for a total of 26,304 possible hourly observations for each monitor
 monitors <- rep(c("Pfizer Lab Site", "IS 52", "Queens College 2",
               "Queens College Near Road", "Fort Lee Near Road", "Jersey City",
               "Chester", "Rutgers"), each = 26304)
-datetime_full <- rep(seq(ymd_hm("2018-01-01 0:00", tz = "GMT"), ymd_hm("2020-12-31 23:00", tz = "GMT"), by = "hour"), 8)
-df_uniq_mon_dt <- tibble(monitors, datetime_full) %>% mutate(uniq_mon_dt = paste0(monitors, "_", datetime_full))
-df_uniq_mon_dt$uniq_mon_dt[duplicated(df_uniq_mon_dt$uniq_mon_dt)] # check for duplicates --> should be 0
+datetime_full <- rep(seq(ymd_hm("2018-01-01 0:00", tz = "GMT"), 
+                         ymd_hm("2020-12-31 23:00", tz = "GMT"), 
+                         by = "hour"), 8) # replicate sequence 8x (for each monitor)
+df_uniq_mon_dt <- tibble(monitors, datetime_full) %>% 
+  mutate(uniq_mon_dt = paste0(monitors, "_", datetime_full))
+df_uniq_mon_dt$uniq_mon_dt[duplicated(df_uniq_mon_dt$uniq_mon_dt)] # check for duplicates
 df_uniq_mon_dt <- df_uniq_mon_dt %>% dplyr::select(-monitors) %>% 
   mutate(monitor_id = rep(c("36-005-0133", "36-005-0110", "36-081-0124",
                             "36-081-0125", "34-003-0010", "34-017-1002",

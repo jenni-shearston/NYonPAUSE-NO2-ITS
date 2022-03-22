@@ -75,7 +75,7 @@
 
 # 0.a Declare Directories 
 raw.data.folder <- '/Users/jennishearston/Desktop/nldas_data/'
-NLDAS.data.folder <- '~/Dropbox/Columbia/Research/F31_GoogleTraffic_COVID_CVD/NO2_ITS/NYonPAUSE-NO2-ITS/data/nldas_data/'
+NLDAS.data.folder <- here::here('data', 'nldas_data')
 
 # 0.b Load packages
 packages <- c("tidyverse", "rgdal")
@@ -93,9 +93,10 @@ for(YYYY in 2018:2020){
   flist <- list.files(pattern = 'SUB.grb')
   #flist <- flist[1:288]
   
-  # 1b Define the function to read in the grib data, convert to dataframe, and define timeHour 
-  # This strategy is the most robust because it makes the least assumptions about the structure of your data or 
-  # how R works. 
+  # 1b Define the function to read in the grib data, convert to dataframe, and  
+  #    define timeHour
+  #    This strategy is the most robust because it makes the least assumptions  
+  #    about the structure of your data or how R works. 
   make.grib.hour <- function( i ){
     readGDAL(flist[i]) %>% 
       data.frame(.) %>% 
@@ -103,7 +104,8 @@ for(YYYY in 2018:2020){
       mutate(TimeHour = str_sub(TimeHour, start = 19L, end = -19L))
   }
   
-  # 1c Initialize the empty, properly named dataframe that you will fill with the grib data
+  # 1c Initialize the empty, properly named dataframe that you will fill with 
+  #    the grib data
   L <- make.grib.hour(1) %>% sample_frac(0, replace = TRUE)
   
   # 1d Fill in all of the nldas data

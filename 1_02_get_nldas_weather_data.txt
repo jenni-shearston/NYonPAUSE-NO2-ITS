@@ -1,29 +1,30 @@
 Description of process to get NLDAS data 
-Overall, you make a list of URLS that will download all of your data. Then you use the wget command to access each url and download everything. Then you put it in a long data format that you can save as a csv. 
+Overall, we first make a list of URLS that will download all of the data. Then we use the wget command to access each url and download everything. Finally, we convert the data to a long data format that can be saved as a csv. 
 Step-by-step Instructions
-0) create an account at https://daac.gsfc.nasa.gov/ 
+0) Create an account at https://daac.gsfc.nasa.gov/ 
 You will need the user name and password to download the data
 You will also need to add NASA GESDISC DATA ARCHIVE to your list of approved applications in your EARTHDATA LOGIN account, following these instructions: https://disc.gsfc.nasa.gov/earthdata-login
-1) create a folder in the project directory called nldas_YYYY 
+1) Create a folder in the project directory called nldas_YYYY 
 where YYYY = 2014, 2009, etc 
 2) Go to https://daac.gsfc.nasa.gov/
 search for "NLDAS_FORA0125_H_002" in the GES DISC data collections search area 
 Make sure you are looking at hourly data
-3) click on "subset/ Get Data" it is a blue text under "NLDAS Primary Forcing Data L4 Hourly 0.125 x 0.125 degree V002 (NLDAS_FORA0125_H.002)"
+3) Click on "subset/ Get Data" it is in blue text under "NLDAS Primary Forcing Data L4 Hourly 0.125 x 0.125 degree V002 (NLDAS_FORA0125_H.002)"
 4) Change the Download Method to "Get File Subsets using the GES DISC Subsetter." Choose the dates, area, and variables you want. The area JAS used for NYC was: -74.268,40.470,-73.694,40.928
 It is helpful to choose just 2 days at first, to make sure everything is running smoothly.
 5) Choose the grib data format 
 6) Now click "Download Links List" 
 This will download a plain text file. This plain text file is just a series of urls. 
-Each url is an automatic download. If you pasted that url into your browser, you would just download the grib file for one hour. 
-7) Now put that text file into the nldas_YYYY folder you just made and rename the text file following the same convention as the folder (e.g., nldas_YYYY.txt). 
-8) Now its time to open the terminal (Mac only - For Windows, its pretty different and  these instructions do not apply) 
-9) The first thing you do is change your directory to the nldas_YYYY folder. 
-use the command cd, as in cd [directory]    ex: cd ~/Desktop/nldas_2014 
-10) now you tell the computer to go to each of the sites and download the data, using
-the wget command. wget is a program that automates downloading stuff. Google "download wget" if it is not currently in your computer. 
+Each url is an automatic download; if pasted into a browser, the url would download the grib file for one hour. 
+7) Now put that text file into the nldas_YYYY folder and rename the text file following the same convention as the folder (e.g., nldas_YYYY.txt). 
+8) Open the terminal 
+9) First, change your directory to the nldas_YYYY folder. 
+use the command cd, as in cd [directory]    e.g., cd ~/Desktop/nldas_2014 
+Note: The format of the cd call may be slightly different on Windows operating systems
+10) Now we download each of the urls, using the wget command. wget is a program that automates downloads. Google "download wget" if it is not currently in your computer. 
 use this line in the terminal 
 wget --input-file=nldas_2014.txt  --content-disposition --user=EarthDataUserName --password=EarthDataPassword -nv &>download.log
+Note: The exact syntax may be different for Windows operating systems
 11) Data processing for three years of data takes approximately 15 hours. May need to 
 use a command first (e.g., caffeinate) to ensure your computer does not go to sleep while processing
 

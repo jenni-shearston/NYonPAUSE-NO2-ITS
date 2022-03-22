@@ -53,9 +53,9 @@ key = c("")
 ####***************************
 
 # 1a Create tibble of monitor data
-# Data entered from EPA's Interactive Map of Air Quality Monitors
-# All NO2 monitors with data any years from 
-# 2018-2020 are included
+#    Note: Data entered from EPA's Interactive Map of Air Quality Monitors
+#          All NO2 monitors with data any years from 2018-2020 are included
+#          The Rutgers monitor has only been in operation since 2019
 
 monitors <- tribble(
   ~monitor_id, ~b_year, ~e_year, ~monitor_name,
@@ -108,7 +108,7 @@ monitors <- monitors %>%
   mutate(pull_year = b_year+yr_count)
 
 # 3c Create b_date and e_date variables for API pull
-# Format should be "yearmonthday" 
+#    Note: Format should be "yearmonthday" 
 monitors <- monitors %>% 
   mutate(b_date = paste0(pull_year, "0101"),
          e_date = paste0(pull_year, "1231"))
@@ -152,8 +152,8 @@ pull_NO2 = function(x) {
 ####**********************
 
 # 5a Pull from API
-# Note: pull ten at a time, and wait 10 sec between each pull,
-# so as not to overwhelm the API.
+#    Note: Pull ten at a time, and wait 10 sec between each pull,
+#          so as not to overwhelm the API.
 for (x in 1:10){
   monitors$data[[x]] = pull_NO2(x)
 }
@@ -193,8 +193,8 @@ monitors2 <- monitors2 %>%
 ####**********************
 
 # 7a Save out data as csv
-# note: large df, may take some time to save
-# do not use write.csv or write_csv - not fast enough
+#    Note: Large df, may take some time to save
+#          do not use write.csv or write_csv - not fast enough
 fwrite(monitors2, "./data/no2_nyc_area.csv")
 
 # 7b Clean environment
