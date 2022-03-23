@@ -309,6 +309,7 @@ results_hourly <- results_hourly %>%
 
 # 5a Pre-during supplemental table (Table 1)
 pre_during <- no2_plot %>%
+  mutate(spf_humidity_gkg = spf_humidity*1000) %>% # convert to g/kg
   group_by(intervention) %>% 
   summarise(no2_mean = mean(sample_measurement, na.rm = T),
             no2_sd = sd(sample_measurement, na.rm = T),
@@ -316,8 +317,8 @@ pre_during <- no2_plot %>%
             precip_sd = sd(precip, na.rm = T),
             radiation_mean = mean(radiation, na.rm = T),
             radiation_sd = sd(radiation, na.rm = T),
-            humidity_mean = mean(spf_humidity, na.rm = T),
-            humidity_sd = sd(spf_humidity, na.rm = T),
+            humidity_mean = mean(spf_humidity_gkg, na.rm = T),
+            humidity_sd = sd(spf_humidity_gkg, na.rm = T),
             pressure_mean = mean(surf_pressure, na.rm = T),
             pressure_sd = sd(surf_pressure, na.rm = T),
             temp_mean = mean(temp, na.rm = T),
