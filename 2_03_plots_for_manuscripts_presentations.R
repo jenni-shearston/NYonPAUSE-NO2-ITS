@@ -49,7 +49,7 @@ no2_plot <- read_csv("./data/no2_with_covariates.csv") %>%
 mod_main <- readRDS("outputs/mod_main.rds")
 mod_hourly <- readRDS("outputs/mod_hourly.rds")
 mod_weekend <- readRDS("outputs/mod_weekend.rds")
-mod_RIS <- readRDS("outputs/mod_mainRIS.rds")
+mod_mainRIS <- readRDS("outputs/mod_mainRIS.rds")
 mod_roadside <- readRDS("outputs/mod_roadside.rds")
 
 
@@ -144,7 +144,7 @@ dev.off()
 # 2a Create plot: hourly time series
 time_series_plot_hourly <- no2_plot %>% filter(monitor_name != "Chester") %>% 
   filter(monitor_name != "Rutgers") %>% filter(!is.na(monitor_id)) %>% 
-  ggplot(aes(x = datetime_full, y = sample_measurement)) +
+  ggplot(aes(x = datetime_local, y = sample_measurement)) +
   geom_line(aes(color = monitor_name), alpha = 0.25) +
   geom_vline(aes(xintercept = as.integer(as.POSIXct("2020-03-22"))), color = "black",
              linetype = "dashed") +
@@ -162,9 +162,9 @@ time_series_plot_hourly <- no2_plot %>% filter(monitor_name != "Chester") %>%
 # 2b Create plot: daily time series
 time_series_plot_daily <- no2_plot %>% filter(monitor_name != "Chester") %>% 
   filter(monitor_name != "Rutgers") %>% filter(!is.na(monitor_id)) %>% 
-  group_by(date, monitor_name) %>% mutate(no2_daily = mean(sample_measurement)) %>% 
+  group_by(date_local, monitor_name) %>% mutate(no2_daily = mean(sample_measurement)) %>% 
   ungroup() %>% 
-  ggplot(aes(x = datetime_full, y = no2_daily)) +
+  ggplot(aes(x = datetime_local, y = no2_daily)) +
   geom_line(aes(color = monitor_name), alpha = 0.25) +
   geom_vline(aes(xintercept = as.integer(as.POSIXct("2020-03-22"))), color = "black",
              linetype = "dashed") +
@@ -310,6 +310,7 @@ results_hourly <- results_hourly %>%
 # 5a Pre-during supplemental table (Table 1)
 pre_during <- no2_plot %>%
   mutate(spf_humidity_gkg = spf_humidity*1000) %>% # convert to g/kg
+  filter(!is.na(intervention)) %>% 
   group_by(intervention) %>% 
   summarise(no2_mean = mean(sample_measurement, na.rm = T),
             no2_sd = sd(sample_measurement, na.rm = T),

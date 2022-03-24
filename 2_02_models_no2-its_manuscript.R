@@ -116,7 +116,6 @@ no2_formods %>% filter(time_elapsed > 48 & time_elapsed < 73) %>%
 acf(no2_formods$sample_measurement, na.action = na.pass, lag = 100)
 pacf(no2_formods$sample_measurement, na.action = na.pass, lag = 100)
 
-
 ####***************************************
 #### 1: Determine Choice of Main Model #### 
 ####***************************************
@@ -267,7 +266,8 @@ table(no2_full$monitor_id, no2_full$detection_limit)
 # 2d Check for non-linearity using resids vs explanatory vars plots
 #    Notes: time_elapsed, temp, spf_humidity, surf_pressure, radiation looked good
 #           wind_speed and precip are very funnelled
-#           Tried adding nonlinear terms to model, but it did not improve plots
+#           Tried adding nonlinear terms to model for wind_speed and precip because
+#           of the shape in the plots, but it did not improve plots
 # 2d.i time_elapsed & other vars
 no2_fordiag %>% ggplot(aes(x = wind_speed, y = resids_scaled, color = monitor_id)) +
   geom_point(alpha = 0.25) + geom_hline(yintercept = 0) + xlab("Explanatory Var") + 

@@ -148,11 +148,19 @@ cent_tend <- no2_full %>% group_by(monitor_name, pull_year) %>%
 
 # 1d Correlations between monitors
 corr <- no2_full %>% dplyr::select(sample_measurement, monitor_name) %>%
+  mutate(monitor_name = case_when(monitor_name == 'Chester' ~ 'Ches',
+                                  monitor_name == 'Fort Lee Near Road' ~ 'FL',
+                                  monitor_name == 'IS 52' ~ 'IS52',
+                                  monitor_name == 'Jersey City' ~ 'JC',
+                                  monitor_name == 'Pfizer Lab Site' ~ 'Pfiz',
+                                  monitor_name == 'Queens College 2' ~ 'QC2',
+                                  monitor_name == 'Queens College near Road' ~ 'QCNR',
+                                  monitor_name == 'Rutgers' ~ 'Rut')) %>% 
   group_by(monitor_name) %>% 
   mutate(row = row_number()) %>% 
   pivot_wider(names_from = monitor_name, values_from = sample_measurement) %>% 
   dplyr::select(-row, -'NA') %>% 
-  cor(use = "pairwise.complete.obs")
+  cor(use = "na.or.complete")
 
 corrplot::corrplot(corr, type = "upper", tl.col = "black", tl.srt = 45)
 
@@ -282,8 +290,8 @@ pm2.5 <- pm2.5 %>% unnest(cols = c(data), names_repair = "unique") %>%
 # Note: There is more than one observation per datetime, but we only want one obs
 #       per datetime. The dataframe contains two POC values (4 and 1). Since most 
 #       observations are POC == 4, we will keep all of these. However, there are n=76
-#       observations that are only in POC == 1. We want to keep as many observations as 
-#       possible without duplicating datetimes (and without averaging).
+#       observations that are only in POC == 1. We want to keep as many observations  
+#       as possible without duplicating datetimes (and without averaging).
 
 poc4 <- pm2.5 %>% filter(poc==4)
 poc1 <- pm2.5 %>% filter(poc==1)
@@ -291,11 +299,11 @@ sum(poc4$datetime_local %in% poc1$datetime_local)
 poc1_only <- subset(poc1, !(datetime_local %in% poc4$datetime_local))
 pm2.5 <- pm2.5 %>% filter(poc == 4) %>% 
   bind_rows(poc1_only)
-pm2.5$datetime_local[duplicated(pm2.5$datetime_local)] # Check for duplicates --> should be 0
+pm2.5$datetime_local[duplicated(pm2.5$datetime_local)] # Check for duplicates
 
 # 3g Select only needed vars
 pm2.5 <- pm2.5 %>% 
-  dplyr::select(datetime_local, pm2.5)
+  dplyr::select(datetime_local, pm2.5, time_gmt)
 
 # 3h Join with hourly no2 data
 no2_full <- no2_full %>% 
