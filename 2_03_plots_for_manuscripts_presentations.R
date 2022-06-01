@@ -249,7 +249,7 @@ dev.off()
 
 
 ####*****************************************
-#### 4: ITS Results (Table 2 & Figure 4) #### 
+#### 4: ITS Results (Table 3 & Figure 4) #### 
 ####*****************************************
 
 # Here we load and prepare data to make it easy to make or copy/paste
@@ -257,7 +257,7 @@ dev.off()
 # Figure 4 was made in MS PowerPoint, so here we curate model results
 # to make them easier to transfer to PowerPoint
 
-# 4a Pull intervention effects for main model (Table 2)
+# 4a Pull intervention effects for main model (Table 3)
 summary(mod_main)  
 ranef(mod_main)    # random intercepts
 beta_mod_main_int <- summary(mod_main)$tTable[2,1]
@@ -265,7 +265,7 @@ se_mod_main_int  <- summary(mod_main)$tTable[2,2]
 lci_mod_main_int  <- beta_mod_main_int - 1.96*se_mod_main_int
 uci_mod_main_int  <- beta_mod_main_int + 1.96*se_mod_main_int
 
-# 4b Pull intervention effects for roadside models (Table 2)
+# 4b Pull intervention effects for roadside models (Table 3)
 beta_mod_nonroadside_int <- summary(mod_roadside$mods[[1]])$tTable[2,1]
 se_mod_nonroadside_int <- summary(mod_roadside$mods[[1]])$tTable[2,2]
 lci_mod_nonroadside_int <- beta_mod_nonroadside_int - 1.96*se_mod_nonroadside_int
@@ -276,7 +276,7 @@ se_mod_roadside_int <- summary(mod_roadside$mods[[2]])$tTable[2,2]
 lci_mod_roadside_int <- beta_mod_roadside_int - 1.96*se_mod_roadside_int
 uci_mod_roadside_int <- beta_mod_roadside_int + 1.96*se_mod_roadside_int
   
-# 4c Pull intervention effects for weekend/weekday models (Table 2)
+# 4c Pull intervention effects for weekend/weekday models (Table 3)
 beta_mod_weekday_int <- summary(mod_weekend$mods[[1]])$tTable[2,1]
 se_mod_weekday_int  <- summary(mod_weekend$mods[[1]])$tTable[2,2]
 lci_mod_weekday_int  <- beta_mod_weekday_int - 1.96*se_mod_weekday_int
@@ -304,10 +304,10 @@ results_hourly <- results_hourly %>%
 
 
 ####*************************************************************************
-#### 5: Pre vs During Intervention Descriptives (Table 1 and Supp Fig 1) #### 
+#### 5: Pre vs During Intervention Descriptives (Table 2 and Supp Fig 1) #### 
 ####*************************************************************************
 
-# 5a Pre-during supplemental table (Table 1)
+# 5a Pre-during supplemental table (Table 2)
 pre_during <- no2_plot %>%
   mutate(spf_humidity_gkg = spf_humidity*1000) %>% # convert to g/kg
   filter(!is.na(intervention)) %>% 
