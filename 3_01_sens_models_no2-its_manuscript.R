@@ -1,7 +1,7 @@
 # Sensitivity Analyses - ITS Analyses for Manuscript
 # F31 NO2 COVID ITS Analysis
 # Jenni A. Shearston 
-# Updated 02/22/2022
+# Updated 10/14/2022
 
 ####***********************
 #### Table of Contents #### 
@@ -14,6 +14,7 @@
 # 3: Remove outliers with residuals >3SD+mean
 # 4: Change start date of intervention to March 20
 # 5: Remove NJ monitors
+# 6: Detrending and Meteorological Normalization
 
 
 ####**************
@@ -303,5 +304,39 @@ summary(mod_main_nyonly2) # main effect from lme4 model = -3.18; se = 0.1437
                           # lci = -3.18 - 0.1437*1.96; uci = -3.18 + 0.1437*1.96
 
 
+####****************************************************
+#### 6: Detrending and Meteorological Normalization #### 
+####****************************************************
 
+# 6a Regress NO2 on time trends and met
+no2_time_met <- lme4::lmer(sample_measurement ~ day_of_week + month 
+                           + time_of_day + year + wind_dir_met_cat + wind_speed 
+                           + temp + precip + radiation + spf_humidity 
+                           + surf_pressure + (1|monitor_id), 
+                           data = no2_formods_cc)
+
+# 6b Regress NY on Pause on time trends and met
+pause_time_met <- lme4::lmer(intervention ~ day_of_week + month 
+                             + time_of_day + year + wind_dir_met_cat + wind_speed 
+                             + temp + precip + radiation + spf_humidity 
+                             + surf_pressure + (1|monitor_id), 
+                             data = no2_formods_cc)
+
+# 6c Pull residuals from each model and create dataframe
+no2_formods_cc_detrend <- tibble(
+  sample_measurement_resid = resid(no2_time_met),
+  intervention_resid = resid(pause_time_met),
+  time_elapsed = no2_formods_cc$time_elapsed)
+
+# 6d Run model with both sets of residuals
+mod_main_detrend <- lm(sample_measurement_resid ~ intervention_resid 
+                       + time_elapsed,
+                       data = no2_formods_cc_detrend)
+summary(mod_main_detrend)
+
+# 6e Compare effect estimates between models
+#    Note: Main results are essentially the same
+summary(mod_main)         # main effect = -3.23356; se = 0.121445
+summary(mod_main_detrend) # main effect = -3.28; se = 0.1253
+# lci = -3.28 - (.1211*1.96); uci = -3.28 + (.1211*1.96)
 
