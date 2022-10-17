@@ -16,7 +16,7 @@
 # 5: Pre vs During Intervention Weather (Table 1 and Supp Figure 1)
 # 6: Random Intercepts and Slopes Plot (Sup. Fig 2)
 # 7: Histogram of NO2 (Sup. Fig 3)
-# 8: Model Diagnostic Plots (Sup. Figs. 4-6)
+# 8: Model Diagnostic Plots (Sup. Figs. 4-7)
 
 
 ####**************
@@ -463,7 +463,7 @@ dev.off()
 
 
 ####************************************************
-#### 8: Model Diagnostic Plots (Sup. Figs. 4-6) #### 
+#### 8: Model Diagnostic Plots (Sup. Figs. 4-7) #### 
 ####************************************************
 
 # 8a Create dataframe for diagnostic plots
