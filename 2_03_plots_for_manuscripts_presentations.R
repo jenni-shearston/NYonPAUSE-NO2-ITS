@@ -1,7 +1,7 @@
 # Plots for Manuscripts & Presentations
 # F31 NO2 COVID ITS Analysis
 # Jenni A. Shearston 
-# Updated 02/23/2022
+# Updated 10/16/2022
 
 ####***********************
 #### Table of Contents #### 
@@ -15,6 +15,8 @@
 # 4: ITS Results (Table 2 and Figure 4)
 # 5: Pre vs During Intervention Weather (Table 1 and Supp Figure 1)
 # 6: Random Intercepts and Slopes Plot (Sup. Fig 2)
+# 7: Histogram of NO2 (Sup. Fig 3)
+# 8: Model Diagnostic Plots (Sup. Figs. 4-6)
 
 
 ####**************
@@ -422,10 +424,87 @@ results_RIvsRIS_plot
 dev.off()
 
 
+####**************************************
+#### 7: Histogram of NO2 (Sup. Fig 3) #### 
+####**************************************
+
+# 7a Create histogram with full dataset
+hist_full <- no2_plot %>% 
+  ggplot(aes(x = sample_measurement)) +
+  geom_histogram() + 
+  ylab('Count') + 
+  xlab(expression('NO'[2]*' (ppb)')) +
+  theme_bw(base_size = 16)
+hist_full
+
+# # 7b Identify and remove obs with residuals > 3SD + mean
+# # 7b.i Calculate mean and sd of no2
+# mean_no2 = mean(no2_plot$sample_measurement, na.rm = T)   # 16.24254
+# sd_no2 = sd(no2_plot$sample_measurement, na.rm = T)       # 10.39887
+# # 7b.ii Remove residuals greater than 3 SD + mean
+# no2_plot_nooutliers <- data.frame(residuals = residuals(mod_main),
+#                                   sample_measurement = mod_main$data$sample_measurement) %>% 
+#   filter(residuals < ((3*sd_no2) + mean_no2)) %>% 
+#   na.omit() # n = 122,289 (n = 19 outliers removed)
+# 
+# hist_nooutliers <- no2_plot_nooutliers %>% 
+#   ggplot(aes(x = sample_measurement)) +
+#   geom_histogram() + 
+#   ylab('Count') + 
+#   xlab(expression('NO'[2]*' (ppb)')) +
+#   theme_bw(base_size = 16)
+# hist_nooutliers
+
+# 7b Save plot
+tiff("./figures/no2_histogram.tiff", 
+     units = "in", width = 10, height = 8, res = 300)
+hist
+dev.off()
 
 
+####************************************************
+#### 8: Model Diagnostic Plots (Sup. Figs. 4-6) #### 
+####************************************************
 
+# 8a Create dataframe for diagnostic plots
+no2_fordiag <- data.frame(fitted = fitted(mod_main),
+                          resids = residuals(mod_main)) %>% 
+  mutate(resids_scaled = scale(resids))
+                          
+# 8b Heterskedasticity
+md_hetero <- no2_fordiag %>% 
+  ggplot(aes(x = fitted, y = resids_scaled)) +
+  geom_point() + 
+  geom_hline(yintercept = 0) + 
+  xlab("Fitted values") + 
+  ylab("Standardized residuals") + 
+  theme_bw()
+md_hetero
 
+tiff("./figures/md_hetero.tiff", 
+     units = "in", width = 10, height = 8, res = 300)
+md_hetero
+dev.off()
 
+# 8c QQ Plot (normally distributed resids)
+qqnorm(no2_fordiag$resids, pch = 20, col = "black")
+qqline(no2_fordiag$resids)
+
+# 8d Check for influential data points
+md_influential <- 
+  plot(mod_main, monitor_id ~ resid(., scaled=TRUE), abline=0, pch=16,
+     xlab = "Standardised residuals", ylab = "Monitor ID")
+md_influential
+
+tiff("./figures/md_influential.tiff", 
+     units = "in", width = 8, height = 8, res = 300)
+md_influential
+dev.off()
+
+# 8e Autocorrelation
+tiff("./figures/autocor.tiff", 
+     units = "in", width = 10, height = 8, res = 300)
+DescTools::PlotACF(no2_fordiag$resids)
+dev.off()
 
 
